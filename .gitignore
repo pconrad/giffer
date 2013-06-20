@@ -1,3 +1,4 @@
+giflib/*
 # Object files
 *.o
 
