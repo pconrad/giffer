@@ -40,11 +40,7 @@ void initGIF()
 {
   int i;
   ColorMapObject *GIFcmap;
-  char loopheader[15] = "NETSCAPE2.0";
-  const int GIFBPC = 6;
-  const int GIFColors = GIFBPC * GIFBPC * GIFBPC;
-  char ColorTable[6] = { 0, 51, 102, 153, 204, 255 };
-  
+
   GIFcmap = MakeMapObject(256, NULL);
   GIFfile = EGifOpenFileName("oscilout.gif", 0);
   
@@ -79,21 +75,32 @@ void initGIF()
     GIFcmap->Colors[i].Red = r * 255;
     GIFcmap->Colors[i].Green = g * 255;
     GIFcmap->Colors[i].Blue = b * 255;
-//    GIFcmap->Colors[i].Red = ColorTable[i % GIFBPC];
-//    GIFcmap->Colors[i].Green = ColorTable[(i / GIFBPC) % GIFBPC];
-//    GIFcmap->Colors[i].Blue = ColorTable[(i / GIFBPC / GIFBPC) % GIFBPC]; 
   }
-  
+
   EGifPutScreenDesc(GIFfile, WIDTH, HEIGHT, 128, 0, GIFcmap);
 
-  loopheader[11] = 3;
-  loopheader[12] = 1;
-  loopheader[13] = 50;
-  loopheader[14] = 0;
-  EGifPutExtension(GIFfile, 255, 15, loopheader);
-  
-
+  {
+    int loop_count;
+    loop_count=0;
+    {
+      char nsle[12] = "NETSCAPE2.0";
+      char subblock[3];
+      if (EGifPutExtensionFirst(GIFfile, APPLICATION_EXT_FUNC_CODE, 11, nsle) == GIF_ERROR) {
+	exit(1);
+      }
+      subblock[0] = 1;
+      subblock[1] = loop_count / 256;
+      subblock[2] = loop_count % 256;
+      
+      if (EGifPutExtensionLast(GIFfile, APPLICATION_EXT_FUNC_CODE, 3, subblock) == GIF_ERROR) {
+	exit(1);
+      }
+      
+    }
+  }
 }
+  
+  
 
 void saveGIF(unsigned char thisColor)
 {
@@ -105,10 +112,10 @@ void saveGIF(unsigned char thisColor)
 static unsigned char
     ExtStr[4] = { 0x04, 0x00, 0x00, 0xff };
  
-    
+ int delayMs = 1000;
     ExtStr[0] = 0x04;
-    ExtStr[1] = 1000 % 256;
-    ExtStr[2] = 1000 / 256;
+    ExtStr[1] = (delayMs / 10) % 256;
+    ExtStr[2] = (delayMs / 10) / 256;
  
     /* Dump graphics control block. */
     EGifPutExtension(GIFfile, GRAPHICS_EXT_FUNC_CODE, 4, ExtStr);
