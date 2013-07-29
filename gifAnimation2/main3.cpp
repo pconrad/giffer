@@ -25,46 +25,12 @@ const int  SY=7;
 // ...and, the frames themselves
 // (note: they are defined bottom-to-top (a-la OpenGL) so they appear upside-down).
 
-Byte frame0[SX*SY*3] ={
-  W,W,W,W,W,
-  W,W,R,W,W,
-  W,R,W,R,W,
-  W,R,W,R,W,
-  W,R,W,R,W,
-  W,W,R,W,W,
-  W,W,W,W,W,
-};
+Byte palette[SX*SY*3] ={0};
 
-Byte frame1[SX*SY*3] ={
-  W,W,W,W,W,
-  W,W,R,W,W,
-  W,W,R,W,W,
-  W,W,R,W,W,
-  W,R,R,W,W,
-  W,W,R,W,W,
-  W,W,W,W,W,
-};
-
-Byte frame2[SX*SY*3]={
-  W,W,W,W,W,
-  W,R,R,R,W,
-  W,R,W,W,W,
-  W,W,R,W,W,
-  W,W,W,R,W,
-  W,R,R,W,W,
-  W,W,W,W,W,
-};
-
-Byte frame3[SX*SY*3]={
-  W,W,W,W,W,
-  W,R,R,W,W,
-  W,W,W,R,W,
-  W,W,R,W,W,
-  W,W,W,R,W,
-  W,R,R,W,W,
-  W,W,W,W,W,
-};
-
+Byte frame0[SX*SY*3] ={0};
+Byte frame1[SX*SY*3] = {0};
+Byte frame2[SX*SY*3]={0};
+Byte frame3[SX*SY*3]={0};
 Byte frame4[SX*SY*3]={0};
 Byte frame5[SX*SY*3]={0};
 Byte frame6[SX*SY*3]={0};
@@ -81,21 +47,21 @@ void fillFrame(Byte *frame, int w, int h, int r, int g, int b) {
 }
 
 
-void fillFakeFrame(Byte *frame, int w, int h, int r, int g, int b) {
+void fillFakeFrame(Byte *frame, int w, int h) {
   int i=0;
   
   while (i<w*h*3) {
-    frame[i] = r; frame[i+1] = g; frame[i+2] = b;
+    frame[i] = 0; frame[i+1] = 0; frame[i+2] = 0; // Black
     i+=3;
   }
 
-  frame[0] = 255; frame[1]=0; frame[2]=0;
-  frame[3] =   0; frame[4]=255; frame[5]=0;
-  frame[6] =   0; frame[7]=0; frame[8]=255;
-  frame[9] = 255; frame[10]=255; frame[11]=255;
-  frame[12] = 255; frame[13]=255; frame[14]=0;
-  frame[15] =  0; frame[16]=255; frame[17]=255;
-  frame[18] = 255; frame[19]=0; frame[20]=255;
+  frame[0] = 255; frame[1]=0; frame[2]=0;  // Red
+  frame[3] =   0; frame[4]=255; frame[5]=0;  // Green
+  frame[6] =   0; frame[7]=0; frame[8]=255;  // Blue
+  frame[9] = 255; frame[10]=255; frame[11]=255; // White
+  frame[12] = 255; frame[13]=255; frame[14]=0;  // Yellow
+  frame[15] =  0; frame[16]=255; frame[17]=255; // Cyan
+  frame[18] = 255; frame[19]=0; frame[20]=255; // Magenta
   
 }
 
@@ -103,9 +69,9 @@ int main()
 {
   AnimatedGifSaver saver(SX,SY);
   
-  fillFakeFrame(frame0,SX,SY,0,  255,  0);
+  fillFakeFrame(palette,SX,SY);
 
-  saver.FakeFrame(frame0,3.0); // first frame: three secs
+  saver.FakeFrame(palette); // first frame defines color palette
 
   fillFrame(frame0,SX,SY,255,  0,  0);
   fillFrame(frame1,SX,SY,  0,255,  0);

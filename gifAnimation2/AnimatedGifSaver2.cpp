@@ -74,7 +74,7 @@ bool AnimatedGifSaver::AddFrame(Byte* data, float dt){
   return true;       
 }
 
-bool AnimatedGifSaver::FakeFrame(Byte* data, float dt){
+bool AnimatedGifSaver::FakeFrame(Byte* data){
     
   unsigned int npix=gifsx*gifsy;
   

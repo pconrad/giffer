@@ -27,14 +27,15 @@ public:
 
   // Descrutcor
   ~AnimatedGifSaver();
-  
+
+  bool FakeFrame(Byte* data); // fake frame that defines color palette
+  // must contain all colors to be used.
+
   // Adds a frame that is to last [dt] seconds
   // "data" is the image (r,g,b,r,g,b,r,g,b...), bottom-to-top
-  // The first frame defines the palette
+
   bool AddFrame(Byte* data,  float dt);
 
-  bool FakeFrame(Byte* data,  float dt);
-  
   // Saves the results in a gif file
   bool Save(const char* filename);
   
