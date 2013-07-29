@@ -25,7 +25,11 @@ public:
   // All the frames will be sized [sx]X[sy]
   AnimatedGifSaver(int sx, int sy);
 
-  // Descrutcor
+  // Constructor. Use a new instance for each new animation you want to save.
+  // All the frames will be sized the same as the source frame
+  AnimatedGifSaver(const char * const filename);
+
+  // Destructor
   ~AnimatedGifSaver();
 
   bool FakeFrame(Byte* data); // fake frame that defines color palette

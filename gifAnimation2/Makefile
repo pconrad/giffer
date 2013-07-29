@@ -7,12 +7,12 @@ all:	main3 main4
 	cp main4.gif ~/public_html
 
 
-main4: main4.o AnimatedGifSaver2.o
-	g++ ${CPPFLAGS} main4.o AnimatedGifSaver2.o -o main4
+main4: main4.o AnimatedGifSaver.o
+	g++ ${CPPFLAGS} main4.o AnimatedGifSaver.o -o main4
 
 
-main3: main3.o AnimatedGifSaver2.o
-	g++ ${CPPFLAGS} main3.o AnimatedGifSaver2.o -o main3
+main3: main3.o AnimatedGifSaver.o
+	g++ ${CPPFLAGS} main3.o AnimatedGifSaver.o -o main3
 
 
 
