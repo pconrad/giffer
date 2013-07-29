@@ -1,3 +1,13 @@
+#include <cstddef>
+#include <vector>
+#include <gif_lib.h>
+
+using namespace std;
+
+typedef unsigned char Byte;
+
+typedef vector<GifByteType> Frame;
+
 
 /*
   AnimatedGifSaver! 
@@ -42,5 +52,16 @@ public:
 
   // Saves the results in a gif file
   bool Save(const char* filename);
+
+ private:
+
+  std::vector<Frame> frames;
+  std::vector<int> delay;
+  
+  ColorMapObject* outputPalette;
+  
+  int gifsx, gifsy;
+
+
   
 };

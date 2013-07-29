@@ -1,27 +1,21 @@
-#include <cstddef>
-#include <gif_lib.h>
+
+
 #include <stdio.h>
+#include <cstdlib>
+#include <iostream>
 
 #include <vector>
 
 using namespace std;
 
-typedef unsigned char Byte;
-
-typedef vector<GifByteType> Frame;
 
 #include "AnimatedGifSaver.h"
 
 // global vairables
 
-static std::vector<Frame> frames;
-static std::vector<int> delay;
-
-static ColorMapObject* outputPalette;
-
-static int gifsx, gifsy;
 
 AnimatedGifSaver::AnimatedGifSaver(int sx, int sy){
+  outputPalette = NULL;
   gifsx=sx;
   gifsy=sy;
 
@@ -30,8 +24,25 @@ AnimatedGifSaver::AnimatedGifSaver(int sx, int sy){
 }
 
 AnimatedGifSaver::AnimatedGifSaver(const char * const filename){
-  gifsx=100;
-  gifsy=200;
+
+
+  outputPalette = NULL;
+
+  // The following functions are used to set up input from a GIF:
+
+  int error;
+
+  GifFileType *gf = DGifOpenFileName(filename, &error);
+  
+  if (gf==NULL) {
+    std::cerr << "Error: " << error << endl;
+    exit(1);
+  }
+  
+  if (DGifSlurp(gf) != GIF_OK) {
+    std::cerr << "Error: DGifSlurp returned error status "  << endl;
+    exit(2);
+  }
 
   frames.clear();
   delay.clear();

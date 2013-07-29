@@ -1,3 +1,7 @@
+#include <iostream>
+using std::cout;
+using std::cerr;
+using std::endl;
 
 /*
 Example of usage of AnimatedGifSaver class.
@@ -67,11 +71,19 @@ void fillFakeFrame(Byte *frame, int w, int h) {
 
 int main()
 {
+  cout << "Before saver" << endl;
+
   AnimatedGifSaver saver(SX,SY);
+
+  cout << "After saver" << endl;
   
   fillFakeFrame(palette,SX,SY);
 
+  cout << "Before Fake Frame" << endl;
+
   saver.FakeFrame(palette); // first frame defines color palette
+
+  cout << "After Fake Frame" << endl;
 
   fillFrame(frame0,SX,SY,255,  0,  0);
   fillFrame(frame1,SX,SY,  0,255,  0);
@@ -90,6 +102,8 @@ int main()
   saver.AddFrame(frame5,0.5); // first frame: one and half secs
   saver.AddFrame(frame6,0.5); // first frame: one and half secs
   saver.AddFrame(frame7,0.5); // first frame: one and half secs
+
+  cout << "Before Save" << endl;
 
   saver.Save("0123.gif");
 }
