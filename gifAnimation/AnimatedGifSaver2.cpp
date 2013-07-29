@@ -42,27 +42,6 @@ bool AnimatedGifSaver::AddFrame(Byte* data, float dt){
   Frame output(npix);
   
 
-  if (frames.size()==0) {
-  
-    
-    Frame r(npix),g(npix),b(npix);
-  
-    // de-interlaeve
-    for (int i=0, j=0; i<npix; i++){
-    r[i]=data[j++];
-    g[i]=data[j++];
-    b[i]=data[j++];
-    }
-
-    outputPalette = MakeMapObject(paletteSize, NULL);
-    if (!outputPalette) return false;
-    
-    if (QuantizeBuffer(gifsx, gifsy, &paletteSize, 
-                       &(r[0]),&(g[0]),&(b[0]), &(output[0]), 
-                       outputPalette->Colors) == GIF_ERROR) return false;
-
-    
-  } else {
     // maunal assignment of color indices
     for (int i = 0, j=0; i < npix; i++) {
         int minIndex = 0,
@@ -86,11 +65,66 @@ bool AnimatedGifSaver::AddFrame(Byte* data, float dt){
         output[i] = minIndex;
     }
 
-  }
+
   
   frames.push_back(output);
 
   delay.push_back(int(dt*100.0));
+  return true;       
+}
+
+bool AnimatedGifSaver::FakeFrame(Byte* data, float dt){
+    
+  unsigned int npix=gifsx*gifsy;
+  
+  int paletteSize=256;
+
+  Frame output(npix);
+  
+
+  
+    
+    Frame r(npix),g(npix),b(npix);
+  
+    // de-interlaeve
+    for (int i=0, j=0; i<npix; i++){
+    r[i]=data[j++];
+    g[i]=data[j++];
+    b[i]=data[j++];
+    }
+
+    GifColorType ScratchMap[256];
+
+    for (int i=0; i<256; i++) {
+      ScratchMap[i].Red = 0;
+      ScratchMap[i].Green = 0;
+      ScratchMap[i].Blue = 0;
+    }
+    
+
+
+    // RED
+    ScratchMap[0].Red = 248;
+    ScratchMap[0].Green = 0;
+    ScratchMap[0].Blue = 0;
+    // GREEN
+    ScratchMap[1].Red = 0;
+    ScratchMap[1].Green = 248;
+    ScratchMap[1].Blue = 0;
+    // BLUE
+    ScratchMap[2].Red = 0;
+    ScratchMap[2].Green = 0;
+    ScratchMap[2].Blue = 248;
+
+
+    outputPalette = MakeMapObject(paletteSize, ScratchMap);
+    if (!outputPalette) return false;
+    
+    if (QuantizeBuffer(gifsx, gifsy, &paletteSize, 
+                       &(r[0]),&(g[0]),&(b[0]), &(output[0]), 
+                       outputPalette->Colors) == GIF_ERROR) return false;
+
+    
   return true;       
 }
 
@@ -106,9 +140,8 @@ static bool AddLoop(GifFileType *gf){
        return false;
      }
      subblock[0] = 1;
-     subblock[1] = loop_count / 256;
      subblock[2] = loop_count % 256;
-
+     subblock[1] = loop_count / 256;
      if (EGifPutExtensionLast(gf, APPLICATION_EXT_FUNC_CODE, 3, subblock) == GIF_ERROR) {
        return false;
      }

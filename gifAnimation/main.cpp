@@ -9,14 +9,14 @@ Saves a small looped 0-1-2-3 animation in file "0123.gif".
 
 // red and white RGB pixels
 #define R 255,0,0
-#define W 255,255,255
+#define W 0,255,0
 
 
 // Lets define a few frames for this little demo...
 
 // ...red and white RGB pixels
 #define R 255,0,0
-#define W 255,255,255
+#define W 0,255,0
 
 // ...frames sizes
 const int  SX=5;

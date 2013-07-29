@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <gif_lib.h>
 #include <stdio.h>
 
@@ -117,10 +118,10 @@ bool AnimatedGifSaver::FakeFrame(Byte* data, float dt){
     ScratchMap[2].Blue = 248;
 
 
-    outputPalette = MakeMapObject(paletteSize, ScratchMap);
+    outputPalette = GifMakeMapObject(paletteSize, ScratchMap);
     if (!outputPalette) return false;
     
-    if (QuantizeBuffer(gifsx, gifsy, &paletteSize, 
+    if (GifQuantizeBuffer(gifsx, gifsy, &paletteSize, 
                        &(r[0]),&(g[0]),&(b[0]), &(output[0]), 
                        outputPalette->Colors) == GIF_ERROR) return false;
 
@@ -134,6 +135,9 @@ static bool AddLoop(GifFileType *gf){
    int loop_count;
    loop_count=0;
    {
+
+     /* OLD CODE
+
      char nsle[12] = "NETSCAPE2.0";
      char subblock[3];
      if (EGifPutExtensionFirst(gf, APPLICATION_EXT_FUNC_CODE, 11, nsle) == GIF_ERROR) {
@@ -145,7 +149,34 @@ static bool AddLoop(GifFileType *gf){
      if (EGifPutExtensionLast(gf, APPLICATION_EXT_FUNC_CODE, 3, subblock) == GIF_ERROR) {
        return false;
      }
- 
+
+     */
+
+
+     // NEW CODE
+
+     char nsle[12] = "NETSCAPE2.0";
+     char subblock[3];
+     if (EGifPutExtensionLeader(gf, APPLICATION_EXT_FUNC_CODE) == GIF_ERROR) {
+       return false;
+     }
+
+     if (EGifPutExtensionBlock(gf, 11, nsle) == GIF_ERROR) {
+       return false;
+     }
+
+     subblock[0] = 1;
+     subblock[2] = loop_count % 256;
+     subblock[1] = loop_count / 256;
+
+     if (EGifPutExtensionBlock(gf, 3, subblock) == GIF_ERROR) {
+       return false;
+     }
+
+     if (EGifPutExtensionTrailer(gf) == GIF_ERROR) {
+       return false;
+     }
+  
     }
     return true;
 }
@@ -155,7 +186,7 @@ bool AnimatedGifSaver::Save(const char* filename){
   if (frames.size()==0) return false;
   
   
-  GifFileType *GifFile = EGifOpenFileName(filename, FALSE);
+  GifFileType *GifFile = EGifOpenFileName(filename, false, NULL);
   
   if (!GifFile) return false;
 
@@ -183,7 +214,7 @@ bool AnimatedGifSaver::Save(const char* filename){
     
     if (EGifPutImageDesc(
        GifFile,
-		   0, 0, gifsx, gifsy, FALSE, NULL
+		   0, 0, gifsx, gifsy, false, NULL
        ) == GIF_ERROR)  return false;
        
        
