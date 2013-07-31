@@ -1,7 +1,7 @@
 CFLAGS= -I../giflib/include -L../giflib/lib -lgif
 
-BINARIES= giffer1
-GIFS=giffer1.gif
+BINARIES= giffer1 giffer2 gifferLoop1
+GIFS=giffer1.gif giffer2.gif gifferLoop1.gif
 
 WEBDEST=~/public_html/giffer
 
@@ -16,6 +16,27 @@ giffer1.gif:	giffer1
 
 giffer1: giffer1.o  qprintf.o 
 	gcc ${CFLAGS} giffer1.o  qprintf.o -o giffer1 
+
+giffer2.gif:	giffer2
+	LD_LIBRARY_PATH=../giflib/lib ./giffer2 < ../gifs/leds3.gif > giffer2.gif
+	mkdir -p -m 755 ${WEBDEST}
+	cp giffer2.gif ${WEBDEST}
+	chmod a+rx ${WEBDEST}/giffer2.gif
+
+giffer2: giffer2.o  qprintf.o 
+	gcc ${CFLAGS} giffer2.o  qprintf.o -o giffer2 
+
+
+gifferLoop1.gif:	gifferLoop1
+	LD_LIBRARY_PATH=../giflib/lib ./gifferLoop1 < ../gifs/leds3.gif > gifferLoop1.gif
+	mkdir -p -m 755 ${WEBDEST}
+	cp gifferLoop1.gif ${WEBDEST}
+	chmod a+rx ${WEBDEST}/gifferLoop1.gif
+
+gifferLoop1: gifferLoop1.o  qprintf.o 
+	gcc ${CFLAGS} gifferLoop1.o  qprintf.o -o gifferLoop1 
+
+
 
 depend:
 	makedepend -I../giflib/include -I/usr/include *.c
