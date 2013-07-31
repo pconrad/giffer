@@ -147,6 +147,76 @@ void    addAllLEDs(SavedImage *image, ColorMapObject *colorMap) {
 }
 
 
+/*
+ * SavedImageCpy creates a deep copy of a saved image.
+ * The storage for the copy should already be allocated.
+ * It works like strcpy (dst,src)
+ */
+void 
+SavedImageCpy(SavedImage * const dest, const SavedImage * const src)
+{
+  SavedImage * const sp = dest;
+  const SavedImage * const CopyFrom = src;
+
+
+ 
+  if (src == NULL) {
+	fprintf(stderr,"Error: %s %d src pointer null\n", __FILE__, __LINE__);
+	exit(5);
+  }
+  if (dest == NULL) {
+	fprintf(stderr,"Error: %s %d dest pointer null\n", __FILE__, __LINE__);
+	exit(6);
+  }
+
+  /* clear, then copy */
+
+  memset((char *)sp, '\0', sizeof(SavedImage));
+  memcpy((char *)sp, CopyFrom, sizeof(SavedImage));
+
+  /* 
+   * Make our own allocated copies of the heap fields in the
+   * copied record.  This guards against potential aliasing
+   * problems.
+   */
+  
+  /* first, the local color map */
+  if (sp->ImageDesc.ColorMap != NULL) {
+    sp->ImageDesc.ColorMap = GifMakeMapObject(
+					      CopyFrom->ImageDesc.ColorMap->ColorCount,
+					      CopyFrom->ImageDesc.ColorMap->Colors);
+    if (sp->ImageDesc.ColorMap == NULL) {
+      fprintf(stderr,"Error: %s %d allocated color map failed\n", __FILE__, __LINE__);
+      exit(4);
+    }
+  }
+  
+  /* next, the raster */
+  sp->RasterBits = (unsigned char *)malloc(sizeof(GifPixelType) *
+					   CopyFrom->ImageDesc.Height *
+					   CopyFrom->ImageDesc.Width);
+  if (sp->RasterBits == NULL) {
+    fprintf(stderr,"Error: %s %d malloc raster bits failed\n", __FILE__, __LINE__);
+    exit(7);
+  }
+
+  memcpy(sp->RasterBits, CopyFrom->RasterBits,
+	 sizeof(GifPixelType) * CopyFrom->ImageDesc.Height *
+	 CopyFrom->ImageDesc.Width);
+  
+  /* finally, the extension blocks */
+  if (sp->ExtensionBlocks != NULL) {
+      sp->ExtensionBlocks = (ExtensionBlock *)malloc(
+						     sizeof(ExtensionBlock) *
+						     CopyFrom->ExtensionBlockCount);
+      if (sp->ExtensionBlocks == NULL) {
+	fprintf(stderr,"Error: %s %d malloc extension blocks failed\n", __FILE__, __LINE__);
+	exit(7);
+      }
+      memcpy(sp->ExtensionBlocks, CopyFrom->ExtensionBlocks,
+	     sizeof(ExtensionBlock) * CopyFrom->ExtensionBlockCount);
+  }
+}
 
 
 int main(int argc, char **argv)
@@ -181,11 +251,18 @@ int main(int argc, char **argv)
 	      __FILE__,__LINE__);
     }
 
+
+    // Make copy of SavedImage[0] as SavedImage[1]
+
+    int imageSize = 99999;
+    SavedImage *newImage = (SavedImage *) malloc( sizeof(SavedImage) );
+
+    SavedImageCpy(newImage, &GifFileIn->SavedImages[0]);
+
     fprintf(stderr,"About to call addAllLEDs \n");
 
-    turnOnLED(2,&(GifFileIn->SavedImages[0]),GifFileIn->SColorMap);
-
-
+    turnOnLED(2,newImage,GifFileIn->SColorMap);
+    
 
      /* This code just copies the header and each image from the incoming file.
      */
@@ -205,6 +282,8 @@ int main(int argc, char **argv)
     
     for (i = 0; i < GifFileIn->ImageCount; i++)
       (void) GifMakeSavedImage(GifFileOut, &GifFileIn->SavedImages[i]);
+
+    (void) GifMakeSavedImage(GifFileOut, newImage);
     
     /*
      * Note: don't do DGifCloseFile early, as this will

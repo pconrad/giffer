@@ -44,6 +44,32 @@ struct namedHexColor {
      "orange","orange","orange","blue","blue","yellow","yellow"};
 
 
+GifAppendExtensionBlocks(int *ExtensionBlockCount,
+			ExtensionBlock **ExtensionBlocks,
+			int AdditionalExtensionBlockCount,
+			ExtensionBlock *AdditionalExtensionBlocks)
+
+
+{
+  int i;
+  for (i=0; i<AdditionalExtensionBlockCount; i++) {
+    ExtensionBlock *ep;
+
+    ep = (AdditionalExtensionBlocks + i); // ptr arithmetic
+
+    int retVal = GifAddExtensionBlock(ExtensionBlockCount, ExtensionBlocks,
+			 ep->Function,
+			 ep->ByteCount,
+			 ep->Bytes);
+    if (retVal != GIF_OK) {
+      fprintf(stderr,"Error: %s %d GifAddExtensionBlock failed \n",
+	      __FILE__,__LINE__);
+      exit(12);
+    }
+  }
+}
+
+
 void
 DumpColorMap(ColorMapObject *Object,
              FILE * fp)
@@ -147,6 +173,76 @@ void    addAllLEDs(SavedImage *image, ColorMapObject *colorMap) {
 }
 
 
+/*
+ * SavedImageCpy creates a deep copy of a saved image.
+ * The storage for the copy should already be allocated.
+ * It works like strcpy (dst,src)
+ */
+void 
+SavedImageCpy(SavedImage * const dest, const SavedImage * const src)
+{
+  SavedImage * const sp = dest;
+  const SavedImage * const CopyFrom = src;
+
+
+ 
+  if (src == NULL) {
+	fprintf(stderr,"Error: %s %d src pointer null\n", __FILE__, __LINE__);
+	exit(5);
+  }
+  if (dest == NULL) {
+	fprintf(stderr,"Error: %s %d dest pointer null\n", __FILE__, __LINE__);
+	exit(6);
+  }
+
+  /* clear, then copy */
+
+  memset((char *)sp, '\0', sizeof(SavedImage));
+  memcpy((char *)sp, CopyFrom, sizeof(SavedImage));
+
+  /* 
+   * Make our own allocated copies of the heap fields in the
+   * copied record.  This guards against potential aliasing
+   * problems.
+   */
+  
+  /* first, the local color map */
+  if (sp->ImageDesc.ColorMap != NULL) {
+    sp->ImageDesc.ColorMap = GifMakeMapObject(
+					      CopyFrom->ImageDesc.ColorMap->ColorCount,
+					      CopyFrom->ImageDesc.ColorMap->Colors);
+    if (sp->ImageDesc.ColorMap == NULL) {
+      fprintf(stderr,"Error: %s %d allocated color map failed\n", __FILE__, __LINE__);
+      exit(4);
+    }
+  }
+  
+  /* next, the raster */
+  sp->RasterBits = (unsigned char *)malloc(sizeof(GifPixelType) *
+					   CopyFrom->ImageDesc.Height *
+					   CopyFrom->ImageDesc.Width);
+  if (sp->RasterBits == NULL) {
+    fprintf(stderr,"Error: %s %d malloc raster bits failed\n", __FILE__, __LINE__);
+    exit(7);
+  }
+
+  memcpy(sp->RasterBits, CopyFrom->RasterBits,
+	 sizeof(GifPixelType) * CopyFrom->ImageDesc.Height *
+	 CopyFrom->ImageDesc.Width);
+  
+  /* finally, the extension blocks */
+  if (sp->ExtensionBlocks != NULL) {
+      sp->ExtensionBlocks = (ExtensionBlock *)malloc(
+						     sizeof(ExtensionBlock) *
+						     CopyFrom->ExtensionBlockCount);
+      if (sp->ExtensionBlocks == NULL) {
+	fprintf(stderr,"Error: %s %d malloc extension blocks failed\n", __FILE__, __LINE__);
+	exit(7);
+      }
+      memcpy(sp->ExtensionBlocks, CopyFrom->ExtensionBlocks,
+	     sizeof(ExtensionBlock) * CopyFrom->ExtensionBlockCount);
+  }
+}
 
 
 int main(int argc, char **argv)
@@ -181,11 +277,65 @@ int main(int argc, char **argv)
 	      __FILE__,__LINE__);
     }
 
+
+    // Make copy of SavedImage[0] as SavedImage[1], and turn on LED 2
+
+    int imageSize = 99999;
+    SavedImage *newImage = (SavedImage *) malloc( sizeof(SavedImage) );
+
+    SavedImageCpy(newImage, &GifFileIn->SavedImages[0]);
+
     fprintf(stderr,"About to call addAllLEDs \n");
 
-    turnOnLED(2,&(GifFileIn->SavedImages[0]),GifFileIn->SColorMap);
+    turnOnLED(2,newImage,GifFileIn->SColorMap);
+
+    // Allocate a leading extension block for looping
+
+    int LeadingExtensionBlockCount = 0;
+    ExtensionBlock *LeadingExtensionBlocks = NULL;
+    int loopParam=0;  // 0 means loop forever
+    {
+      unsigned char params[3] = {1, 0, 0};
+      /* Create a Netscape 2.0 loop block */
+      if (GifAddExtensionBlock(&LeadingExtensionBlockCount,
+			       &LeadingExtensionBlocks,
+			       APPLICATION_EXT_FUNC_CODE,
+			       11,
+			       (unsigned char *)"NETSCAPE2.0")==GIF_ERROR ) {
+	fprintf(stderr,"Error: %s %d out of memory while adding loop block.\n",
+		__FILE__, __LINE__);
+	exit(9);
+      }
+
+      // Little endian?
+      params[1] = (loopParam & 0xff);
+      params[2] = (loopParam >> 8) & 0xff;
+
+      // Add the extension for the delay
+      if (GifAddExtensionBlock(&LeadingExtensionBlockCount,
+			       &LeadingExtensionBlocks,
+			       0, sizeof(params), params) == GIF_ERROR) {
+	fprintf(stderr,"Error: %s %d out of memory while adding loop continuation.\n",
+		__FILE__, __LINE__);
+	exit(10);
+      }
+
+    }
+
+    // Add to the first image
 
 
+    SavedImage *firstImage = &(GifFileIn->SavedImages[0]);
+    if (firstImage->ExtensionBlockCount == 0) {
+      firstImage->ExtensionBlockCount = LeadingExtensionBlockCount;
+      firstImage->ExtensionBlocks = LeadingExtensionBlocks;
+    } else {
+      GifAppendExtensionBlocks(&firstImage->ExtensionBlockCount,
+			       &firstImage->ExtensionBlocks,
+			       LeadingExtensionBlockCount,
+			       LeadingExtensionBlocks);
+    }
+    
 
      /* This code just copies the header and each image from the incoming file.
      */
@@ -205,6 +355,15 @@ int main(int argc, char **argv)
     
     for (i = 0; i < GifFileIn->ImageCount; i++)
       (void) GifMakeSavedImage(GifFileOut, &GifFileIn->SavedImages[i]);
+
+    (void) GifMakeSavedImage(GifFileOut, newImage);
+
+
+    // Now, add delays to GifFileOut, image 1
+
+    GraphicsControlBlock gcb = {0,false,100,-1}; // 100 means 1000 ms.
+    EGifGCBToSavedExtension(&gcb, GifFileOut, 1);
+    
     
     /*
      * Note: don't do DGifCloseFile early, as this will

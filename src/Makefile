@@ -1,7 +1,7 @@
 CFLAGS= -I../giflib/include -L../giflib/lib -lgif
 
-BINARIES= giffer1 giffer2 gifferLoop1
-GIFS=giffer1.gif giffer2.gif gifferLoop1.gif
+BINARIES= giffer1 giffer2 gifferLoop1 gifferLoop2 gifferLoop3
+GIFS=giffer1.gif giffer2.gif gifferLoop1.gif gifferLoop2.gif gifferLoop3.gif
 
 WEBDEST=~/public_html/giffer
 
@@ -35,6 +35,26 @@ gifferLoop1.gif:	gifferLoop1
 
 gifferLoop1: gifferLoop1.o  qprintf.o 
 	gcc ${CFLAGS} gifferLoop1.o  qprintf.o -o gifferLoop1 
+
+
+gifferLoop2.gif:	gifferLoop2
+	LD_LIBRARY_PATH=../giflib/lib ./gifferLoop2 < ../gifs/leds3.gif > gifferLoop2.gif
+	mkdir -p -m 755 ${WEBDEST}
+	cp gifferLoop2.gif ${WEBDEST}
+	chmod a+rx ${WEBDEST}/gifferLoop2.gif
+
+gifferLoop2: gifferLoop2.o  qprintf.o 
+	gcc ${CFLAGS} gifferLoop2.o  qprintf.o -o gifferLoop2 
+
+
+gifferLoop3.gif:	gifferLoop3
+	LD_LIBRARY_PATH=../giflib/lib ./gifferLoop3 < ../gifs/leds3.gif > gifferLoop3.gif
+	mkdir -p -m 755 ${WEBDEST}
+	cp gifferLoop3.gif ${WEBDEST}
+	chmod a+rx ${WEBDEST}/gifferLoop3.gif
+
+gifferLoop3: gifferLoop3.o  qprintf.o 
+	gcc ${CFLAGS} gifferLoop3.o  qprintf.o -o gifferLoop3 
 
 
 

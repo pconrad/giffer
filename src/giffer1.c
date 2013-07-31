@@ -1,20 +1,11 @@
 /****************************************************************************
 
-gifsponge.c - skeleton file for generic GIF `sponge' program
+P. Conrad, gifferLoop1.c
 
-Slurp a GIF into core, operate on it, spew it out again.  Most of the
-junk above `int main' isn't needed for the skeleton, but is likely to
-be for what you'll do with it.
+Program to demo creating animated gif which flashes LED 2.
 
-If you compile this, it will turn into an expensive GIF copying routine;
-stdin to stdout with no changes and minimal validation.  Well, it's a
-decent test of DGifSlurp() and EGifSpew(), anyway.
-
-Note: due to the vicissitudes of Lempel-Ziv compression, the output of this
-copier may not be bitwise identical to its input.  This can happen if you
-copy an image from a much more (or much *less*) memory-limited system; your
-compression may use more (or fewer) bits.  The uncompressed rasters should,
-however, be identical (you can check this with gifbuild -d).
+Based on gifsponge.c - skeleton file for generic GIF `sponge' program from giflib-5.0.4
+Slurp a GIF into core (from stdin), operate on it, spew it out again (on stdout).
 
 ****************************************************************************/
 
@@ -32,8 +23,8 @@ however, be identical (you can check this with gifbuild -d).
 #define PROGRAM_NAME	"gifsponge"
 
 struct namedHexColor {
-  const char * name;
-  int color;
+  const char * const name;
+  const int color;
 } namedColors[] = { {"red",0xFF0000},
 		    {"orange",0xFF9933}, 
 		    {"yellow",0xFFFF00}, 
@@ -41,6 +32,16 @@ struct namedHexColor {
 		    {"blue",0x0066CC}, 
 		    {0,0} };
 
+  const int ledNumToX[16] = {0,0,
+		       80,80,80,80,80,80,80,
+		       5,  5, 5, 5, 5, 5, 5};
+  const int ledNumToY[16] = {0,0,
+		       165,140,115,90,65,35,10,
+		       165,140,115,90,65,35, 7};
+  const char * const ledNumToColor[16] = 
+    {0,0,
+     "red","green","red","green","red","green","red",
+     "orange","orange","orange","blue","blue","yellow","yellow"};
 
 
 void
@@ -61,10 +62,6 @@ DumpColorMap(ColorMapObject *Object,
     }
   }
 }
-
-
-
-
 
 int getColor(ColorMapObject *Object, int hexColor)
 {
@@ -121,6 +118,37 @@ int getNamedColor(ColorMapObject *Object,
 }
 
 
+
+void turnOnLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
+  
+  int left = image->ImageDesc.Left;
+  int top = image->ImageDesc.Top;
+  int w = image->ImageDesc.Width;
+  int h = image->ImageDesc.Height;
+  
+  
+  GifDrawRectangle(image, 
+		   left + ledNumToX[ledNum],
+		     top + ledNumToY[ledNum],
+		     15, 15,
+		     getNamedColor(colorMap,
+				   ledNumToColor[ledNum],
+				   1));
+}
+
+
+void    addAllLEDs(SavedImage *image, ColorMapObject *colorMap) {
+  
+  int ledNum;
+  for (ledNum = 2; ledNum <=15; ledNum++) {
+    turnOnLED(ledNum, image, colorMap) ;
+  }
+  fprintf(stderr,"Done with addAllLEDs\n");
+}
+
+
+
+
 int main(int argc, char **argv)
 {
     int	i, ErrorCode;
@@ -148,48 +176,16 @@ int main(int argc, char **argv)
 
     if (DEBUG) DumpColorMap(GifFileIn->SColorMap,stderr);
 
-    if (GifFileIn->ImageCount > 0) {
-      fprintf(stderr,"About to call GifDrawRectangle \n");
-      SavedImage *image = &(GifFileIn->SavedImages[0]);
-      int left = image->ImageDesc.Left;
-      int top = image->ImageDesc.Top;
-      int w = image->ImageDesc.Width;
-      int h = image->ImageDesc.Height;
-
-      if (DEBUG) {
-	fprintf(stderr,"image->ImageDesc.Left=%d\n",image->ImageDesc.Left);
-	fprintf(stderr,"image->ImageDesc.Top=%d\n",image->ImageDesc.Top);
-	fprintf(stderr,"image->ImageDesc.Width=%d\n",image->ImageDesc.Width);
-	fprintf(stderr,"image->ImageDesc.Height=%d\n",image->ImageDesc.Height);
-      }
-
-      int ledNumToX[16] = {0,0,
-			   80,80,80,80,80,80,80,
-			   5,  5, 5, 5, 5, 5, 5};
-      int ledNumToY[16] = {0,0,
-			   165,140,115,90,65,35,10,
-			   165,140,115,90,65,35, 7};
-      const char * const ledNumToColor[16] = 
-	{0,0,
-	 "red","green","red","green","red","green","red",
-	 "orange","orange","orange","blue","blue","yellow","yellow"};
-      
-      int ledNum;
-      for (ledNum = 2; ledNum <=15; ledNum++) {
-	GifDrawRectangle(image, 
-			 left + ledNumToX[ledNum],
-			 top + ledNumToY[ledNum],
-			 15, 15,
-			 getNamedColor(GifFileIn->SColorMap,
-				       ledNumToColor[ledNum],
-				       1));
-      }
-
-    } else {
-      fprintf(stderr,"No saved images\n");
+    if (GifFileIn->ImageCount != 1) {
+      fprintf(stderr,"Error: %s %d expecting exactly one image in input file\n",
+	      __FILE__,__LINE__);
     }
 
-    fprintf(stderr,"Done with GifDrawRectangles in image\n");
+    fprintf(stderr,"About to call addAllLEDs \n");
+
+    addAllLEDs(&(GifFileIn->SavedImages[0]),GifFileIn->SColorMap);
+
+
 
      /* This code just copies the header and each image from the incoming file.
      */
