@@ -1,27 +1,37 @@
 CFLAGS= -I../giflib/include -L../giflib/lib -lgif
 
-BINARIES= giffer1
-GIFS=giffer1.gif
+all:	mysponge1 mysponge2 mysponge3 mysponge4 mysponge5
+	LD_LIBRARY_PATH=../giflib/lib ./mysponge1 < ../gifs/leds.gif > ~/public_html/sponge1.gif
+	chmod a+rx ~/public_html/sponge1.gif
+	LD_LIBRARY_PATH=../giflib/lib ./mysponge2 < ../gifs/leds.gif > ~/public_html/sponge2.gif
+	chmod a+rx ~/public_html/sponge2.gif
+	LD_LIBRARY_PATH=../giflib/lib ./mysponge3 < ../gifs/leds.gif > ~/public_html/sponge3.gif
+	chmod a+rx ~/public_html/sponge3.gif
+	- LD_LIBRARY_PATH=../giflib/lib ./mysponge4 < ../gifs/leds.gif > ~/public_html/sponge4.gif
+	- chmod a+rx ~/public_html/sponge4.gif
+	LD_LIBRARY_PATH=../giflib/lib ./mysponge5 < ../gifs/leds3.gif > ~/public_html/sponge5.gif
+	chmod a+rx ~/public_html/sponge5.gif
 
-WEBDEST=~/public_html/giffer
+mysponge1: mysponge1.o getarg.o qprintf.o
+	gcc ${CFLAGS} mysponge1.o getarg.o qprintf.o -o mysponge1
 
-all:	${BINARIES} ${GIFS}
+mysponge2: mysponge2.o getarg.o qprintf.o
+	gcc ${CFLAGS} mysponge2.o getarg.o qprintf.o -o mysponge2
 
+mysponge3: mysponge3.o  qprintf.o makeColorMap.o 
+	gcc ${CFLAGS} mysponge3.o  qprintf.o makeColorMap.o -o mysponge3 
 
-giffer1.gif:	giffer1
-	LD_LIBRARY_PATH=../giflib/lib ./giffer1 < ../gifs/leds3.gif > giffer1.gif
-	mkdir -p -m 755 ${WEBDEST}
-	cp giffer1.gif ${WEBDEST}
-	chmod a+rx ${WEBDEST}/giffer1.gif
+mysponge4: mysponge4.o  qprintf.o makeColorMap.o 
+	gcc ${CFLAGS} mysponge4.o  qprintf.o makeColorMap.o -o mysponge4 
 
-giffer1: giffer1.o  qprintf.o 
-	gcc ${CFLAGS} giffer1.o  qprintf.o -o giffer1 
+mysponge5: mysponge5.o  qprintf.o 
+	gcc ${CFLAGS} mysponge5.o  qprintf.o -o mysponge5 
 
 depend:
 	makedepend -I../giflib/include -I/usr/include *.c
 
 clean:
-	/bin/rm -f *.o ${BINARIES} ${GIFS}
+	/bin/rm -f *.o mysponge1 mysponge2 mysponge3 mysponge4 mysponge5
 
 
 # DO NOT DELETE
