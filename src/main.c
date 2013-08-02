@@ -2,6 +2,8 @@
 #include <stdio.h>
 
 int main() {
+  
+  initArduinoSequence();
 
   fprintf(stderr,"Calling setup()\n");
 
@@ -13,5 +15,7 @@ int main() {
 
   fprintf(stderr,"After loop()\n");
   
+  dumpArduinoSequence();
+
   return 0;
 }

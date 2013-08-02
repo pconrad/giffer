@@ -1,4 +1,4 @@
-CFLAGS= -I../giflib/include -L../giflib/lib -lgif
+CFLAGS= -I../giflib/include -L../giflib/lib -lgif -g
 
 BINARIES= oldLoop1 main
 GIFS= oldLoop1.gif
