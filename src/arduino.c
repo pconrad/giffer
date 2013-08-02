@@ -6,20 +6,8 @@
 
 #include "arduino.h"
 #include <stdio.h>
+#include "arduinoState.h"
 
-struct ArduinoState_S {
-  uint8_t pinMode[NUM_DIGITAL_PINS]; 
-  uint8_t pinState[NUM_DIGITAL_PINS]; 
-  unsigned long millis;
-  struct ArduinoState_S *next;
-};
-
-struct ArduinoSequence_S {
-  struct ArduinoState_S *head;
-  struct ArduinoState_S *curr; // tail--also "current state"
-};
-
-// GLOBALS
 
 struct ArduinoSequence_S *ss;
 

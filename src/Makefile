@@ -1,7 +1,7 @@
 CFLAGS= -I../giflib/include -L../giflib/lib -lgif -g
 
-BINARIES= oldLoop1 main
-GIFS= oldLoop1.gif
+BINARIES= oldLoop1 main main2
+GIFS= oldLoop1.gif main2.gif
 
 WEBDEST=~/public_html/giffer
 
@@ -14,8 +14,18 @@ oldLoop1.gif:	oldLoop1
 	cp oldLoop1.gif ${WEBDEST}
 	chmod a+rx ${WEBDEST}/oldLoop1.gif
 
+main2.gif: main2
+	LD_LIBRARY_PATH=../giflib/lib ./main2 ../gifs/leds3.gif main2.gif
+	mkdir -p -m 755 ${WEBDEST}
+	cp main2.gif ${WEBDEST}
+	chmod a+rx ${WEBDEST}/main2.gif
+
+
 oldLoop1: oldLoop1.o  qprintf.o 
 	gcc ${CFLAGS} oldLoop1.o  qprintf.o -o oldLoop1 
+
+main2: main2.o  qprintf.o arduino.o sketch.o
+	gcc ${CFLAGS} main2.o arduino.o qprintf.o sketch.o -o main2 
 
 main:	main.o arduino.o sketch.o
 	${CC} ${CFLAGS} main.o arduino.o sketch.o -o main

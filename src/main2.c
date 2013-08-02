@@ -19,7 +19,9 @@ Slurp a GIF into core (from stdin), operate on it, spew it out again (on stdout)
 
 #include "gif_lib.h"
 
-#define PROGRAM_NAME	"gifsponge"
+#include "arduinoState.h"
+
+extern struct ArduinoSequence_S *ss;
 
 struct namedHexColor {
   const char * const name;
@@ -161,6 +163,23 @@ void turnOnLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
 				   1));
 }
 
+void turnOnDimLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
+  
+  int left = image->ImageDesc.Left;
+  int top = image->ImageDesc.Top;
+  int w = image->ImageDesc.Width;
+  int h = image->ImageDesc.Height;
+  
+  
+  GifDrawRectangle(image, 
+		   left + ledNumToX[ledNum] + 5,
+		     top + ledNumToY[ledNum] + 5,
+		     5, 5,
+		     getNamedColor(colorMap,
+				   ledNumToColor[ledNum],
+				   1));
+}
+
 
 void    addAllLEDs(SavedImage *image, ColorMapObject *colorMap) {
   
@@ -217,6 +236,9 @@ SavedImageCpy(SavedImage * const dest, const SavedImage * const src)
   }
   
   /* next, the raster */
+  fprintf(stderr,"Allocating bits for raster width=%d height=%d",CopyFrom->ImageDesc.Height,
+	  CopyFrom->ImageDesc.Width);
+
   sp->RasterBits = (unsigned char *)malloc(sizeof(GifPixelType) *
 					   CopyFrom->ImageDesc.Height *
 					   CopyFrom->ImageDesc.Width);
@@ -244,12 +266,18 @@ SavedImageCpy(SavedImage * const dest, const SavedImage * const src)
 }
 
 
-int main(int argc, char **argv)
+
+int makeGif(const char * const baseFile, 
+	    const char * const outFile)
 {
     int	i, ErrorCode;
     GifFileType *GifFileIn, *GifFileOut = (GifFileType *)NULL;
 
-    if ((GifFileIn = DGifOpenFileHandle(0, &ErrorCode)) == NULL) {
+    struct ArduinoState_S *s = ss->head;
+
+
+
+    if ((GifFileIn = DGifOpenFileName(baseFile, &ErrorCode)) == NULL) {
 	PrintGifError(ErrorCode);
 	exit(EXIT_FAILURE);
     }
@@ -257,7 +285,8 @@ int main(int argc, char **argv)
 	PrintGifError(GifFileIn->Error);
 	exit(EXIT_FAILURE);
     }
-    if ((GifFileOut = EGifOpenFileHandle(1, &ErrorCode)) == NULL) {
+
+    if ((GifFileOut = EGifOpenFileName(outFile, false, &ErrorCode)) == NULL) {
 	PrintGifError(ErrorCode);
 	exit(EXIT_FAILURE);
     }
@@ -277,8 +306,6 @@ int main(int argc, char **argv)
     }
 
 
-    // Make copy of SavedImage[0] as SavedImage[1], and turn on LED 2
-
     SavedImage *newImage = (SavedImage *) malloc( sizeof(SavedImage) );
 
     SavedImageCpy(newImage, &GifFileIn->SavedImages[0]);
@@ -286,6 +313,56 @@ int main(int argc, char **argv)
     fprintf(stderr,"About to call addAllLEDs \n");
 
     turnOnLED(2,newImage,GifFileIn->SColorMap);
+
+
+
+    int imageCount = 0;
+    for (s = ss->head; s!=NULL; s=s->next) {
+      imageCount++;
+    }
+
+    // allocate an array for the images
+
+    SavedImage *newImages = 
+      (SavedImage *)
+      malloc(sizeof(SavedImage) * imageCount);
+
+    if (newImages == NULL) {
+      fprintf(stderr,"Error: %s %d Could not allocate memory for images\n",
+	      __FILE__,__LINE__);
+      exit(15);
+    }
+
+    int imageIndex = 0;
+    for (s = ss->head; s!=NULL; s=s->next) {
+      
+      fprintf(stderr,"imageIndex=%d delay=%lu",imageIndex,s->millis);
+
+      // Make copy of SavedImage[0] as "newImages[imageIndex]"
+      
+      SavedImageCpy(&newImages[imageIndex], &GifFileIn->SavedImages[0]);
+      
+      // Now go through, and for each LED that should be on, 
+      // turn it on.
+      
+      // TODO: replace with code that does this from the s record...
+
+      int pin;
+      for (pin = 2; pin <= 15; pin ++) {
+
+	if (s->pinState[pin] == HIGH) {
+	  if (s->pinMode[pin] == OUTPUT) {
+	    turnOnLED(pin,&newImages[imageIndex],GifFileIn->SColorMap);
+	  } else if (s->pinMode[pin] == INPUT) {
+	    turnOnDimLED(pin,&newImages[imageIndex],GifFileIn->SColorMap);
+	  }
+	}
+		  
+      } // for pins
+
+      imageIndex++;
+    } // for state frames
+
 
     // Allocate a leading extension block for looping
 
@@ -323,7 +400,7 @@ int main(int argc, char **argv)
     // Add to the first image
 
 
-    SavedImage *firstImage = &(GifFileIn->SavedImages[0]);
+    SavedImage *firstImage = &(newImages[0]);
     if (firstImage->ExtensionBlockCount == 0) {
       firstImage->ExtensionBlockCount = LeadingExtensionBlockCount;
       firstImage->ExtensionBlocks = LeadingExtensionBlocks;
@@ -351,17 +428,31 @@ int main(int argc, char **argv)
 					     GifFileIn->SColorMap->ColorCount,
 					     GifFileIn->SColorMap->Colors);
     
-    for (i = 0; i < GifFileIn->ImageCount; i++)
-      (void) GifMakeSavedImage(GifFileOut, &GifFileIn->SavedImages[i]);
+    //for (i = 0; i < GifFileIn->ImageCount; i++)
+    //  (void) GifMakeSavedImage(GifFileOut, &GifFileIn->SavedImages[i]);
 
-    (void) GifMakeSavedImage(GifFileOut, newImage);
+   
+    for (i = 0; i < imageCount; i++) {
+      fprintf(stderr,"adding image %d to file\n",i);
+      (void) GifMakeSavedImage(GifFileOut, &newImages[i]);
+     }
 
+    // Now, add delays to GifFileOut
 
-    // Now, add delays to GifFileOut, image 1
+    // start with the second frame, adding delays.
 
-    GraphicsControlBlock gcb = {0,false,100,-1}; // 100 means 1000 ms.
-    EGifGCBToSavedExtension(&gcb, GifFileOut, 1);
-    
+    imageIndex = 1;
+    struct ArduinoState_S *prev = ss->head;
+    for (s = ss->head->next; s; s=s->next) {
+
+      unsigned long delay = (s->millis - prev->millis);
+
+      fprintf(stderr,"adding delay %lu to file\n",delay);
+      GraphicsControlBlock gcb = {0,false,delay/10,-1}; // unit is 1/100 sec
+      EGifGCBToSavedExtension(&gcb, GifFileOut, imageIndex);
+      imageIndex++;
+      prev = s;
+    }
     
     /*
      * Note: don't do DGifCloseFile early, as this will
@@ -377,6 +468,34 @@ int main(int argc, char **argv)
 	PrintGifError(GifFileIn->Error);
 
     return 0;
+    
+
 }
 
 /* end */
+
+int main(int argc, char **argv) {
+
+  if (argc!=3) {
+    fprintf(stderr,"Usage: %s basefile.gif outfile.gif\n",argv[0]);
+    exit(1);
+  }
+
+  initArduinoSequence();
+  fprintf(stderr,"Calling setup()\n");
+
+  setup();
+
+  fprintf(stderr,"Calling loop()\n");
+
+  loop();
+
+  fprintf(stderr,"After loop()\n");
+
+  dumpArduinoSequence();
+
+  int retVal =  makeGif(argv[1],argv[2]);
+  
+  return retVal;
+
+}
