@@ -1,40 +1,31 @@
-CFLAGS= -I../giflib/include -L../giflib/lib -lgif -g
+CFLAGS= -I../giflib/include -g
+LDFLAGS=-L../giflib/lib -lgif -g
 
-BINARIES= oldLoop1 main main2
-GIFS= oldLoop1.gif main2.gif
+# Put a GIF into gifsOut for every .c file in sketches.
+
+GIFS= $(addprefix gifsOut/,$(addsuffix .gif,$(basename $(notdir $(wildcard sketches/*.c)))))
 
 WEBDEST=~/public_html/giffer
 
-all:	${BINARIES} ${GIFS}
+all:	${GIFS}
 
-
-oldLoop1.gif:	oldLoop1
-	LD_LIBRARY_PATH=../giflib/lib ./oldLoop1 < ../gifs/leds3.gif > oldLoop1.gif
+gifsOut/sketch%.gif : sketch%.exe
+	LD_LIBRARY_PATH=../giflib/lib ./$< ../gifs/leds3.gif $@
 	mkdir -p -m 755 ${WEBDEST}
-	cp oldLoop1.gif ${WEBDEST}
-	chmod a+rx ${WEBDEST}/oldLoop1.gif
+	cp $@ ${WEBDEST}
+	chmod a+rx ${WEBDEST}/$(notdir $@)
 
-main2.gif: main2
-	LD_LIBRARY_PATH=../giflib/lib ./main2 ../gifs/leds3.gif main2.gif
-	mkdir -p -m 755 ${WEBDEST}
-	cp main2.gif ${WEBDEST}
-	chmod a+rx ${WEBDEST}/main2.gif
+sketch%.o: sketches/sketch%.c
+	gcc -c ${CFLAGS} -I. $< -o $@
 
-
-oldLoop1: oldLoop1.o  qprintf.o 
-	gcc ${CFLAGS} oldLoop1.o  qprintf.o -o oldLoop1 
-
-main2: main2.o  qprintf.o arduino.o sketch.o
-	gcc ${CFLAGS} main2.o arduino.o qprintf.o sketch.o -o main2 
-
-main:	main.o arduino.o sketch.o
-	${CC} ${CFLAGS} main.o arduino.o sketch.o -o main
+sketch%.exe: sketch%.o main.o qprintf.o arduino.o 
+	gcc ${LDFLAGS} main.o qprintf.o arduino.o $< -o $@ 
 
 depend:
 	makedepend -I../giflib/include -I/usr/include *.c
 
 clean:
-	/bin/rm -f *.o ${BINARIES} ${GIFS}
+	/bin/rm -f *.o *.exe ${GIFS}
 
 
 # DO NOT DELETE
@@ -54,11 +45,13 @@ arduino.o: /usr/include/libkern/i386/_OSByteOrder.h /usr/include/alloca.h
 arduino.o: /usr/include/machine/types.h /usr/include/i386/types.h
 arduino.o: /usr/include/string.h /usr/include/secure/_string.h
 arduino.o: /usr/include/secure/_common.h /usr/include/math.h
-arduino.o: /usr/include/architecture/i386/math.h
-main.o: giffer.h Arduino.h /usr/include/stdlib.h /usr/include/Availability.h
-main.o: /usr/include/AvailabilityInternal.h /usr/include/_types.h
-main.o: /usr/include/sys/_types.h /usr/include/sys/cdefs.h
-main.o: /usr/include/machine/_types.h /usr/include/i386/_types.h
+arduino.o: /usr/include/architecture/i386/math.h /usr/include/stdio.h
+arduino.o: /usr/include/secure/_stdio.h arduinoState.h
+main.o: /usr/include/stdio.h /usr/include/_types.h /usr/include/sys/_types.h
+main.o: /usr/include/sys/cdefs.h /usr/include/machine/_types.h
+main.o: /usr/include/i386/_types.h /usr/include/secure/_stdio.h
+main.o: /usr/include/secure/_common.h /usr/include/stdlib.h
+main.o: /usr/include/Availability.h /usr/include/AvailabilityInternal.h
 main.o: /usr/include/sys/wait.h /usr/include/sys/signal.h
 main.o: /usr/include/sys/appleapiopts.h /usr/include/machine/signal.h
 main.o: /usr/include/i386/signal.h /usr/include/i386/_structs.h
@@ -69,26 +62,9 @@ main.o: /usr/include/libkern/_OSByteOrder.h
 main.o: /usr/include/libkern/i386/_OSByteOrder.h /usr/include/alloca.h
 main.o: /usr/include/machine/types.h /usr/include/i386/types.h
 main.o: /usr/include/string.h /usr/include/secure/_string.h
-main.o: /usr/include/secure/_common.h /usr/include/math.h
-main.o: /usr/include/architecture/i386/math.h /usr/include/stdio.h
-main.o: /usr/include/secure/_stdio.h
-oldLoop1.o: /usr/include/stdio.h /usr/include/_types.h
-oldLoop1.o: /usr/include/sys/_types.h /usr/include/sys/cdefs.h
-oldLoop1.o: /usr/include/machine/_types.h /usr/include/i386/_types.h
-oldLoop1.o: /usr/include/secure/_stdio.h /usr/include/secure/_common.h
-oldLoop1.o: /usr/include/stdlib.h /usr/include/Availability.h
-oldLoop1.o: /usr/include/AvailabilityInternal.h /usr/include/sys/wait.h
-oldLoop1.o: /usr/include/sys/signal.h /usr/include/sys/appleapiopts.h
-oldLoop1.o: /usr/include/machine/signal.h /usr/include/i386/signal.h
-oldLoop1.o: /usr/include/i386/_structs.h /usr/include/sys/_structs.h
-oldLoop1.o: /usr/include/machine/_structs.h /usr/include/sys/resource.h
-oldLoop1.o: /usr/include/machine/endian.h /usr/include/i386/endian.h
-oldLoop1.o: /usr/include/sys/_endian.h /usr/include/libkern/_OSByteOrder.h
-oldLoop1.o: /usr/include/libkern/i386/_OSByteOrder.h /usr/include/alloca.h
-oldLoop1.o: /usr/include/machine/types.h /usr/include/i386/types.h
-oldLoop1.o: /usr/include/string.h /usr/include/secure/_string.h
-oldLoop1.o: /usr/include/fcntl.h /usr/include/sys/fcntl.h
-oldLoop1.o: ../giflib/include/gif_lib.h /usr/include/stdbool.h
+main.o: /usr/include/fcntl.h /usr/include/sys/fcntl.h
+main.o: ../giflib/include/gif_lib.h /usr/include/stdbool.h arduinoState.h
+main.o: arduino.h /usr/include/math.h /usr/include/architecture/i386/math.h
 qprintf.o: /usr/include/stdio.h /usr/include/_types.h
 qprintf.o: /usr/include/sys/_types.h /usr/include/sys/cdefs.h
 qprintf.o: /usr/include/machine/_types.h /usr/include/i386/_types.h
