@@ -61,7 +61,7 @@ void dumpTwoLEDsState(struct ArduinoState_S *s, int led1, int led2) {
 
 void dumpArduinoState(struct ArduinoState_S *s) {
 
-  fprintf(stderr,"+----------------------------------------------+\n",s->millis);
+  fprintf(stderr,"+----------------------------------------------+\n");
   fprintf(stderr,"|              millis=%10lu               |\n",s->millis);
   //         "| [15] R [OUTPUT,HIGH]    [OUTPUT,HIGH] g [ 8] |\n");
   //         "| [14] R [OUTPUT,HIGH]    [OUTPUT,HIGH] g [ 7] |\n");
@@ -115,7 +115,6 @@ void initArduinoSequence() {
 
 void dumpArduinoSequence() {
   // dump, for debugging, the entire sequence of Arduino states.
-  int i;
   struct ArduinoState_S *s;
   for (s= ss->head; s!=NULL; s=s->next) {
     dumpArduinoState(s);

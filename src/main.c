@@ -19,6 +19,8 @@ Slurp a GIF into core (from stdin), operate on it, spew it out again (on stdout)
 
 #include "gif_lib.h"
 
+void PrintGifError(int ErrorCode); // defined in qprintf.c
+
 #include "arduinoState.h"
 
 extern struct ArduinoSequence_S *ss;
@@ -45,7 +47,7 @@ struct namedHexColor {
      "orange","orange","orange","blue","blue","yellow","yellow"};
 
 
-GifAppendExtensionBlocks(int *ExtensionBlockCount,
+void GifAppendExtensionBlocks(int *ExtensionBlockCount,
 			ExtensionBlock **ExtensionBlocks,
 			int AdditionalExtensionBlockCount,
 			ExtensionBlock *AdditionalExtensionBlocks)
@@ -150,8 +152,8 @@ void turnOnLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
   
   int left = image->ImageDesc.Left;
   int top = image->ImageDesc.Top;
-  int w = image->ImageDesc.Width;
-  int h = image->ImageDesc.Height;
+  // int w = image->ImageDesc.Width;
+  // int h = image->ImageDesc.Height;
   
   
   GifDrawRectangle(image, 
@@ -167,8 +169,8 @@ void turnOnDimLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
   
   int left = image->ImageDesc.Left;
   int top = image->ImageDesc.Top;
-  int w = image->ImageDesc.Width;
-  int h = image->ImageDesc.Height;
+  // int w = image->ImageDesc.Width;
+  // int h = image->ImageDesc.Height;
   
   
   GifDrawRectangle(image, 
