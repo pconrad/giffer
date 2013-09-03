@@ -3,7 +3,13 @@ LDFLAGS= -g
 
 # Put a GIF into gifsOut for every .c file in sketches.
 
-GIFS= $(addprefix gifsOut/,$(addsuffix .gif,$(basename $(notdir $(wildcard sketches/*.c)))))
+#SKETCHES=../sketchesIn
+#GIFSOUT=../gifsOut
+#BASEGIFS=../baseGifs
+
+#GIFS= $(addprefix ${GIFSOUT}/,$(addsuffix .gif,$(basename $(notdir $(wildcard ${SKETCHES}/*.c)))))
+
+
 
 # The object files that we wrote to support creating gifs from Arduino sketches
 OUR_OBJS=main.o arduino.o 
@@ -13,24 +19,10 @@ OUR_OBJS=main.o arduino.o
 #   that work on Cygwin, but we were not successful so far.
 GIFLIB_OBJS=qprintf.o gifalloc.o egif_lib.o dgif_lib.o gif_hash.o gif_font.o gif_err.o
 
-WEBDEST=~/public_html/giffer
-
-all:	${GIFS}
-
-gifsOut/sketch%.gif : sketch%.exe
-	./$< ../gifs/leds3.gif $@
-	mkdir -p -m 755 ${WEBDEST}
-	cp $@ ${WEBDEST}
-	chmod a+rx ${WEBDEST}/$(notdir $@)
-
-sketch%.o: sketches/sketch%.c
-	gcc -c ${CFLAGS} -I. $< -o $@
-
-sketch%.exe: sketch%.o ${OUR_OBJS} ${GIFLIB_OBJS}
-	gcc ${LDFLAGS} ${OUR_OBJS} ${GIFLIB_OBJS} $< -o $@ 
+all: depend ${OUR_OBJS} ${GIFLIB_OBJS}
 
 depend:
-	makedepend *.c
+	- makedepend *.c
 
 clean:
 	/bin/rm -f *.o *.exe ${GIFS}
