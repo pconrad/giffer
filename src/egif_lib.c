@@ -668,11 +668,11 @@ int EGifGCBToSavedExtension(const GraphicsControlBlock *GCB,
 	return GIF_ERROR;
 
     for (i = 0; i < GifFile->SavedImages[ImageIndex].ExtensionBlockCount; i++) {
-	ExtensionBlock *ep = &GifFile->SavedImages[ImageIndex].ExtensionBlocks[i];
-	if (ep->Function == GRAPHICS_EXT_FUNC_CODE) {
-	    EGifGCBToExtension(GCB, ep->Bytes);
-	    return GIF_OK;
-	}
+		ExtensionBlock *ep = &GifFile->SavedImages[ImageIndex].ExtensionBlocks[i];
+		if (ep->Function == GRAPHICS_EXT_FUNC_CODE) {
+			EGifGCBToExtension(GCB, ep->Bytes);
+			return GIF_OK;
+		}
     }
 
     Len = EGifGCBToExtension(GCB, (GifByteType *)buf);

@@ -81,6 +81,7 @@ GifFreeMapObject(ColorMapObject *Object)
     }
 }
 
+/*
 #ifdef DEBUG
 void
 DumpColorMap(ColorMapObject *Object,
@@ -100,7 +101,8 @@ DumpColorMap(ColorMapObject *Object,
         }
     }
 }
-#endif /* DEBUG */
+#endif // DEBUG
+ */
 
 /*******************************************************************************
  Compute the union of two given color maps and return it.  If result can't 
