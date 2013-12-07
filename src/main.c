@@ -262,10 +262,11 @@ SavedImageCpy(SavedImage * const dest, const SavedImage * const src)
 		int i;
 		//And don't forget to copy the extension block byte field
 		for(i=0;i<CopyFrom->ExtensionBlockCount;i++){
-			sp->ExtensionBlocks[i]=CopyFrom->ExtensionBlocks[i];
-			sp->ExtensionBlocks[i].Bytes=malloc(sizeof(GifByteType));
-			memcpy(sp->ExtensionBlocks[i].Bytes, CopyFrom->ExtensionBlocks[i].Bytes,
-				   sizeof(GifByteType));
+			sp->ExtensionBlocks[i]=CopyFrom->ExtensionBlocks[i];	//Copy immediate fields
+			int size = CopyFrom->ExtensionBlocks[i].ByteCount * sizeof(GifByteType);
+			sp->ExtensionBlocks[i].Bytes=malloc(size);
+			//Copy the buffer
+			memcpy(sp->ExtensionBlocks[i].Bytes, CopyFrom->ExtensionBlocks[i].Bytes,size);
 		}
 	}
 }
