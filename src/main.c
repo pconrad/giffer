@@ -9,7 +9,7 @@
  
  ****************************************************************************/
 
-//#define DEBUG 0
+#define DEBUG 0
 
 #include <stdio.h>
 #include <stdlib.h>
