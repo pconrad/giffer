@@ -16,7 +16,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <string.h>
-
+#include <sys/time.h>
 #include "gif_lib.h"
 
 void PrintGifError(int ErrorCode); // defined in qprintf.c
@@ -28,11 +28,12 @@ extern struct ArduinoSequence_S *ss;
 struct namedHexColor {
 	const char * const name;
 	const int color;
-} namedColors[] = { {"red",0xFF0000},
-	{"orange",0xFF9933},
-	{"yellow",0xFFFF00},
-	{"green",0x00FF66},
-	{"blue",0x0066CC},
+} namedColors[] = { 
+    {"red",3},
+	{"orange",4},
+	{"yellow",1},
+	{"green",5},
+	{"blue",6},
 	{0,0} };
 
 const int ledNumToX[16] = {0,0,
@@ -45,8 +46,10 @@ const char * const ledNumToColor[16] =
 {0,0,
 	"red","green","red","green","red","green","red",
 	"orange","orange","orange","blue","blue","yellow","yellow"};
+	
 
-
+char *p;
+const char * const text;
 void GifAppendExtensionBlocks(int *ExtensionBlockCount,
 							  ExtensionBlock **ExtensionBlocks,
 							  int AdditionalExtensionBlockCount,
@@ -92,6 +95,24 @@ DumpColorMap(ColorMapObject *Object,
 	}
 }
 
+int convertStringColorToInt(const char* color) {
+	if (color == NULL) {
+		return 0;
+	} else if (strncmp(color, "red", 3) == 0) {
+		return 3;
+	} else if (strncmp(color, "orange", 6) == 0) {
+		return 4;
+	} else if (strncmp(color, "blue", 4) == 0) {
+		return 6;
+	} else if (strncmp(color, "yellow", 6) == 0) {
+		return 1;
+	} else if (strncmp(color, "green", 5) == 0) {
+		return 5;
+	} else {
+		return 0;
+	}
+}
+
 int getColor(ColorMapObject *Object, int hexColor)
 {
 	int r = ((hexColor & 0xFF0000) >> 16);
@@ -127,6 +148,7 @@ int getNamedColor(ColorMapObject *Object,
 	for (i=0; namedColors[i].name != 0; i++) {
 		if (strcmp(color,namedColors[i].name)==0) {
 			retValue = getColor(Object,namedColors[i].color);
+			printf("retValue is %d", retValue);
 			break;
 		}
 	}
@@ -160,9 +182,8 @@ void turnOnLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
 					 left + ledNumToX[ledNum],
 					 top + ledNumToY[ledNum],
 					 15, 15,
-					 getNamedColor(colorMap,
-								   ledNumToColor[ledNum],
-								   1));
+					 convertStringColorToInt(ledNumToColor[ledNum])
+					 );
 }
 
 void turnOnDimLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
@@ -177,9 +198,8 @@ void turnOnDimLED(int ledNum, SavedImage *image, ColorMapObject *colorMap) {
 					 left + ledNumToX[ledNum] + 5,
 					 top + ledNumToY[ledNum] + 5,
 					 5, 5,
-					 getNamedColor(colorMap,
-								   ledNumToColor[ledNum],
-								   1));
+					convertStringColorToInt(ledNumToColor[ledNum])
+					);
 }
 
 
@@ -294,8 +314,7 @@ int makeGif(const char * const baseFile,
 		PrintGifError(ErrorCode);
 		exit(EXIT_FAILURE);
     }
-	
-    
+
     /*
      * Your operations on in-core structures go here.
      */
@@ -348,7 +367,33 @@ int makeGif(const char * const baseFile,
 				}
 			}
 		} // for pins
+		char imageChar[10];
+		time_t current_time;
+		char* c_time_string;
+		char* user;
+    /* Obtain current time as seconds elapsed since the Epoch. */
+		current_time = time(NULL);
+    /* Convert to local time format. */
+		c_time_string = ctime(&current_time);
 		
+		user = getenv("USER");
+		if (user == NULL) {
+			user = getenv("USERNAME");
+		}
+		if (user == NULL) {
+			user = "No user";
+		}
+		
+		char* currentDay = c_time_string;
+		currentDay[strlen(currentDay) - 15] = '\0';
+		char* hoursMinutesSecondsYear = c_time_string + 11;
+		hoursMinutesSecondsYear[strlen(hoursMinutesSecondsYear) - 1] = '\0';
+		sprintf(imageChar, "%d", imageIndex);
+		GifDrawText8x8(&newImages[imageIndex], 000, 200, "Frame: ", 100);
+		GifDrawText8x8(&newImages[imageIndex], 175, 200, imageChar, 100);
+		GifDrawText8x8(&newImages[imageIndex], 0, 210, user, 100);
+		GifDrawText8x8(&newImages[imageIndex], 0, 220, currentDay, 100);
+		GifDrawText8x8(&newImages[imageIndex], 0, 230, hoursMinutesSecondsYear, 100);
 		imageIndex++;
     } // for state frames
 	

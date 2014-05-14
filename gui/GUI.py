@@ -3,6 +3,7 @@ from tkFileDialog import askopenfilename,asksaveasfilename
 from subprocess import call
 import ntpath
 import os
+from os.path import expanduser
 
 dir = "~"
 inoFile = ""
@@ -34,11 +35,12 @@ def gifIt():
     oldFile=open(file)
     contents = oldFile.read()
     oldFile.close()
-    newFile=open("temp.c","w")
+    home = expanduser("~") + "\\temp.c"
+    newFile=open(home,"w")
     newFile.write('#include "arduino.h"\n')
     newFile.write(contents)
     newFile.close()
-    call(["gcc", "-c", "-g", "-I", "../src", "-Wall", "-I", ".", "temp.c", "-o", "../src/sketch1.o"]) #gcc -c -g -I ../src -Wall -I . ../sketchesIn/sketch1.c -o ../src/sketch1.o
+    call(["gcc", "-c", "-g", "-I", "../src", "-Wall", "-I", ".", home, "-o", "../src/sketch1.o"]) #gcc -c -g -I ../src -Wall -I . ../sketchesIn/sketch1.c -o ../src/sketch1.o
     call(["gcc", "-g", "-Wall", "-c", "-o", "../src/main.o", "../src/main.c"]) #gcc -g -Wall   -c -o main.o main.c
     call(["gcc", "-g", "-Wall", "-c", "-o", "../src/arduino.o", "../src/arduino.c"]) #gcc -g -Wall   -c -o arduino.o arduino.c
     call(["gcc", "-g", "-Wall", "-c", "-o", "../src/qprintf.o", "../src/qprintf.c"]) #gcc -g -Wall   -c -o qprintf.o qprintf.c
@@ -52,6 +54,7 @@ def gifIt():
     call(["rm", "../src/*.o"]) #rm ../src/sketch1.o
     call(["../src/sketch1.exe", "../baseGifs/leds3.gif", location]) # ./src/sketch1.exe baseGifs/leds3.gif gifsOut/sketch1.gif
     call(["rm", "../src/sketch1.exe"])
+    call(["rm", home])
 
 locate = Button(master, text="Step 1: Locate .ino", command=askForFilename)
 filename = Text(master, height = 1)
